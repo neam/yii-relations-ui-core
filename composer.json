@@ -1,0 +1,25 @@
+{
+    "name": "neam/yii-relations-ui-core",
+    "description": "To simplify editing relations in a Yii 1 app (Core part of https://github.com/neam/yii-relations-ui)",
+    "keywords": ["yii"],
+    "homepage": "https://github.com/neam/yii-relations-ui-core",
+    "type": "yii-extension",
+    "license": "BSD-3-Clause",
+    "authors": [
+        {
+            "name": "Fredrik Wollsén",
+            "email": "fredrik@neam.se"
+        }
+    ],
+    "repositories": [
+    ],
+    "autoload": {
+        "psr-4": {
+            "neam\\yii_relations_ui_core\\": ""
+        }
+    },
+    "require": {
+        "php": ">=5.4.0",
+        "yiisoft/yii": ">=1.1.0"
+    }
+}
