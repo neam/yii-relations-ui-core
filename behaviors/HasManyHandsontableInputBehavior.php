@@ -142,9 +142,6 @@ class HasManyHandsontableInputBehavior extends CActiveRecordBehavior
 
         $value = json_decode($json, true);
 
-        // The last row is always empty, so we remove it
-        array_pop($value);
-
         // Get metadata for the relation we are editing
         $relations = $this->owner->relations();
         $relation = $relations[$relationAttribute];
@@ -171,6 +168,14 @@ class HasManyHandsontableInputBehavior extends CActiveRecordBehavior
         // Find or create new active records
         $activeRecords = array();
         foreach ($value as $k => $row) {
+
+            // ignore completely empty rows, since we can't really do anything with them
+            $emptyCheck = implode("", $row);
+            if (empty($emptyCheck)) {
+                Yii::log("Row $k had only empty values so it was removed", 'info', __METHOD__);
+                continue;
+            }
+
             $pkVal = $row[$pkAttribute];
             $ar = null;
             // create new attributes when the primary key is empty
