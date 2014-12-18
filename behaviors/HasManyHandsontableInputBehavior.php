@@ -253,10 +253,9 @@ class HasManyHandsontableInputBehavior extends CActiveRecordBehavior
                 $validationErrors = array();
                 foreach ($activeRecords as $k => $ar) {
                     $ar->save();
-                }
-
-                if ($ar->hasErrors()) {
-                    $validationErrors[$k] = $ar->errors;
+                    if ($ar->hasErrors()) {
+                        $validationErrors[$k] = $ar->errors;
+                    }
                 }
 
                 if (!empty($validationErrors)) {
