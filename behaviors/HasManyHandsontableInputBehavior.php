@@ -137,7 +137,7 @@ class HasManyHandsontableInputBehavior extends CActiveRecordBehavior
      * Finds and populates a list of active records matching the grid data
      * @param $value
      */
-    protected function validatedActiveRecords($relationAttribute, $json, &$validationErrors = null)
+    protected function validatedActiveRecords($relationAttribute, $json, &$validationErrors = null, &$activeRecordsToDelete = array())
     {
 
         $value = json_decode($json, true);
@@ -172,21 +172,30 @@ class HasManyHandsontableInputBehavior extends CActiveRecordBehavior
             // ignore completely empty rows, since we can't really do anything with them
             $emptyCheck = implode("", $row);
             if (empty($emptyCheck)) {
-                Yii::log("Row $k had only empty values so it was removed", 'info', __METHOD__);
+                Yii::log("Row $k had only empty values so it was ignored", 'info', __METHOD__);
                 continue;
             }
 
             $pkVal = $row[$pkAttribute];
             $ar = null;
-            // create new attributes when the primary key is empty
-            if (empty($pkVal)) {
-                $ar = new $relationClass;
-            } else {
+            // attempt to find existing model
+            if (!empty($pkVal)) {
                 $ar = $relationModel->findByPk($pkVal);
-                if (empty($ar)) {
+                if ($row["_delete"]) {
+                    $activeRecordsToDelete[] = $ar;
+                    continue;
+                }
+            }
+            // create new attributes when the primary key is empty or the existing model does not exist
+            if (empty($ar)) {
+                if ($row["_delete"]) {
+                    Yii::log("Row $k was marked for deletion but had no primary so it was ignored", 'info', __METHOD__);
+                    continue;
+                } else {
                     $ar = new $relationClass;
                 }
             }
+
             // set the attributes to the grid data row's data
             $ar->attributes = $row;
             // set default link attribute - this is what makes newly created records link to the item we are editing
@@ -219,7 +228,8 @@ class HasManyHandsontableInputBehavior extends CActiveRecordBehavior
             try {
 
                 $validationErrors = array();
-                $activeRecords = $this->validatedActiveRecords($relationAttribute, $json, $validationErrors);
+                $activeRecordsToDelete = array();
+                $activeRecords = $this->validatedActiveRecords($relationAttribute, $json, $validationErrors, $activeRecordsToDelete);
                 if (!empty($validationErrors)) {
                     $this->owner->addError($relationAttribute, "Related records did not validate: " . print_r($validationErrors, true));
                 }
@@ -251,9 +261,21 @@ class HasManyHandsontableInputBehavior extends CActiveRecordBehavior
             $relationAttribute = $this->virtualToActualAttribute($name);
             try {
 
-                $activeRecords = $this->validatedActiveRecords($relationAttribute, $json);
-
                 $validationErrors = array();
+                $activeRecordsToDelete = array();
+                $activeRecords = $this->validatedActiveRecords($relationAttribute, $json, $validationErrors, $activeRecordsToDelete);
+                if (!empty($validationErrors)) {
+                    throw new \CException("Related records should have been validated already but did not validate: " . print_r($validationErrors, true));
+                }
+
+                // Delete active records
+                foreach ($activeRecordsToDelete as $ar) {
+                    if (!$ar->delete()) {
+                        throw new \CException("Failed to delete active record. Errors: " . print_r($ar->errors, true));
+                    }
+                }
+
+                // Attempt to save the active records
                 foreach ($activeRecords as $k => $ar) {
                     $ar->save();
                     if ($ar->hasErrors()) {
@@ -262,7 +284,7 @@ class HasManyHandsontableInputBehavior extends CActiveRecordBehavior
                 }
 
                 if (!empty($validationErrors)) {
-                    $this->owner->addError($relationAttribute, "Related records did not validate: " . print_r($validationErrors, true));
+                    $this->owner->addError($relationAttribute, "Related records did not validate upon save: " . print_r($validationErrors, true));
                 }
 
                 // commit transaction
