@@ -245,6 +245,9 @@ class HasManyHandsontableInputBehavior extends CActiveRecordBehavior
             // is to set the related records on the "through" relation. Works only when the relation is through has one
             // and the "through" relation needs to have the same relation defined, albeit as a simple has many relation.
 
+            // start transaction if not already within one
+            $transaction = empty(Yii::app()->db->currentTransaction) ? Yii::app()->db->beginTransaction() : null;
+
             $relationAttribute = $this->virtualToActualAttribute($name);
             try {
 
@@ -262,11 +265,16 @@ class HasManyHandsontableInputBehavior extends CActiveRecordBehavior
                     $this->owner->addError($relationAttribute, "Related records did not validate: " . print_r($validationErrors, true));
                 }
 
+                // commit transaction
+                Yii::log("Commit import transaction", "trace", __METHOD__);
+                $transaction && $transaction->commit();
+
                 $this->owner->{$relationAttribute} = $activeRecords;
                 unset($this->_toSave[$name]);
 
             } catch (Exception $e) {
                 $this->owner->addError($relationAttribute, "Exception during ar validation: " . $e->getMessage());
+                $transaction && $transaction->rollback();
             }
 
         }
