@@ -154,7 +154,7 @@ class HasManyHandsontableInputBehavior extends CActiveRecordBehavior
                 $relationModel = $relationClass::model();
                 $pkAttribute = $relationModel->tableSchema->primaryKey;
                 if (!isset($relation["through"])) {
-                    $linkAttribute = $this->owner->tableSchema->primaryKey;
+                    $linkAttribute = $relation[2];
                     $defaultLinkAttributeValue = $this->owner->$pkAttribute;
                 } else {
                     $linkAttribute = $relation[2][$pkAttribute];
