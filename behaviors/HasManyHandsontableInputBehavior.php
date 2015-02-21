@@ -202,6 +202,10 @@ class HasManyHandsontableInputBehavior extends CActiveRecordBehavior
             if (empty($ar->$linkAttribute)) {
                 $ar->$linkAttribute = $defaultLinkAttributeValue;
             }
+            // set attribute "ordinal" if available - this allows us to render the relations in the same order as they were entered in the table
+            if (array_key_exists("ordinal", $ar->attributes)) {
+                $ar->ordinal = $k;
+            }
             // validate and collect any validation errors
             $ar->validate();
             if ($ar->hasErrors()) {
