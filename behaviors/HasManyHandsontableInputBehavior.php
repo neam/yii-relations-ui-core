@@ -189,7 +189,7 @@ class HasManyHandsontableInputBehavior extends CActiveRecordBehavior
             // create new attributes when the primary key is empty or the existing model does not exist
             if (empty($ar)) {
                 if ($row["_delete"]) {
-                    Yii::log("Row $k was marked for deletion but had no primary so it was ignored", 'info', __METHOD__);
+                    Yii::log("Row $k was marked for deletion but had no primary key so it was ignored", 'info', __METHOD__);
                     continue;
                 } else {
                     $ar = new $relationClass;
